@@ -387,6 +387,7 @@ Lessico fisso: *traccia* (non brano/canzone nell'UI), *sorgente*, *griglia*,
 |---|---|
 | `brand/edi-audio-mixer.png` | Visual di riferimento del rebranding |
 | `brand/edi-audio-mixer.prompt.txt` | Brief usato per generare il visual |
+| `brand/edi-audio-app.png` | Screenshot dell'app con il nuovo design |
 | `brand/favicon.svg` | Icona: LED lime su quadrato scuro |
 | `DESIGN_SYSTEM.md` / `DESIGN_SYSTEM.pdf` | Questo documento |
 | `index.html` | Implementazione di riferimento dei token e dei componenti |
