@@ -1,1 +1,182 @@
+# edi.audio
 
+Scarica una traccia e la consegna **già pronta da mixare**: griglia dei beat
+corretta, tonalità musicale e chiave in notazione Camelot, hot cue e loop salvati, guadagno
+normalizzato, nome file che si ordina da solo per BPM.
+
+Le tracce si aprono in **Mixxx** senza dover lanciare l'analisi: BPM, griglia e
+cue vengono letti direttamente dai tag del file. Gli stessi tag funzionano
+anche in Serato, e per Rekordbox e Denon Engine viene generato un XML.
+
+## Come funziona
+
+```
+URL o titolo ──► sceglie la sorgente ──► scarica in FLAC ──► analizza
+                 (misura la qualità                          (BPM, chiave,
+                  reale, non quella                           struttura)
+                  dichiarata)                                     │
+                                                                  ▼
+                     playlist ordinate ◄── rinomina ◄── scrive griglia e cue
+```
+
+**La sorgente non è il link che incolli, è la migliore che si trova.** Per ogni
+candidato la pipeline scarica una finestra di audio e ne misura il taglio
+spettrale: è così che riconosce un file "320 kbps" che in realtà è un 128
+ricodificato, e lo scarta. Se cercando per titolo trova qualcosa di meglio del
+link che hai dato, usa quello e te lo dice.
+
+Se hai acquisti su **Bandcamp**, **Beatport** o **Juno**, quelli vengono prima
+di tutto il resto: sono lossless veri, non un contenitore lossless attorno a
+una sorgente compressa.
+
+## Requisiti
+
+- **Python 3.10+**
+- **ffmpeg**: `sudo apt install ffmpeg` (macOS: `brew install ffmpeg`)
+- **Mixxx**, per usare le tracce: `sudo apt install mixxx`
+
+```bash
+pip install -r requirements.txt
+./setup_analysis_venv.sh      # stack di analisi (BPM, chiave, struttura)
+```
+
+`setup_analysis_venv.sh` installa librosa nel venv dell'app; se in questo
+ambiente non si installa, crea da sé un interprete separato e lo usa.
+
+## Correzioni a mano: Mixxx è l'editor
+
+L'automatismo sbaglia, e quando sbaglia si corregge in Mixxx. Perché la
+correzione torni indietro nel file servono due opzioni di Mixxx, da attivare
+una volta sola in *Preferenze → Libreria*:
+
+1. **Sincronizza i metadata della libreria con quelli dei file**
+2. **Esporta metadata Serato** — Mixxx avverte che è sperimentale; è normale
+
+`python dj_prep.py doctor` verifica se sono attive e lo dice.
+
+**La scrittura non è immediata.** Mixxx la rimanda a quando la traccia non è
+più caricata in nessun deck: in pratica la correzione arriva nel file quando
+chiudi Mixxx. Se la vuoi subito, tasto destro sulla traccia →
+*Metadati → Esporta su File Tags*, poi espellila dai deck o chiudi Mixxx.
+
+Da quel momento edi.audio riconosce le tracce che hai ritoccato e **non le
+tocca più**: una ri-analisi ne aggiorna metadata, guadagno e nome, ma lascia
+griglia, cue e loop come li hai messi tu. Nell'elenco compaiono con l'etichetta
+«corretta a mano». Per riscriverle comunque: `rescan --force`.
+
+Il riconoscimento confronta i valori decodificati e non i byte dei tag: Mixxx
+li riscrive con un riempimento proprio, e un confronto binario segnalerebbe come
+«corretta a mano» ogni traccia semplicemente caricata. L'impronta di riferimento
+sta **fuori dal file**, in `~/.dj_downloader/analysis-state.json`, perché Mixxx
+elimina i campi che non conosce — compreso il nostro — proprio quando riscrive i
+tag. Una traccia con cue di origine sconosciuta viene conservata per prudenza.
+
+## Uso
+
+### Web app
+
+```bash
+python web_app.py
+```
+
+Incolla un link **oppure scrivi «artista - titolo»**, premi *Prepara tutto*. La
+tabella mostra BPM, chiave, cue e un giudizio sulla qualità della sorgente;
+*Esporta playlist* genera le M3U8 e il `rekordbox.xml`.
+
+### Riga di comando
+
+```bash
+python dj_prep.py prepare "Bicep - Glue"           # cerca, scarica, prepara
+python dj_prep.py prepare "https://.../playlist"   # playlist intera, traccia per traccia
+python dj_prep.py rescan  ~/Musica/DJ --export     # prepara i FLAC che hai già
+python dj_prep.py export  ~/Musica/DJ --organize   # playlist, crate, cartelle per genere
+python dj_prep.py inspect traccia.flac             # mostra griglia e cue del file
+python dj_prep.py doctor                           # verifica ambiente e Mixxx
+```
+
+Le tracce si preparano **in parallelo**: su sedici core, sei brani passano da
+162 a 35 secondi. Con `--workers N` si sceglie quante alla volta.
+
+## Come è organizzata la libreria
+
+```
+Musica/DJ/
+  Techno/122 - 7A - Dm - Bicep - Glue.flac      ← cartelle per genere (--organize)
+  Drum And Bass/174 - 7B - F - Sub Focus - Turn Back Time.flac
+  Senza genere/…                            ← quelle da classificare a mano
+  crates/       BPM 126-132.m3u8, Camelot 8A.m3u8, Techno.m3u8
+  playlists/    per-bpm.m3u8, per-camelot.m3u8, recenti.m3u8
+  rekordbox.xml
+  libreria.json
+```
+
+Le **crate** si importano in Mixxx con *tasto destro sul pannello Crates →
+Import Crate*, anche selezionandole tutte insieme. Il nome del file diventa il
+nome della crate. Il genere viene dai tag di MusicBrainz.
+
+## Cosa finisce nella traccia
+
+| | |
+|---|---|
+| Griglia | marca Serato con primo downbeat e BPM, `BPMLOCK` attivo |
+| Hot cue | 1 MIX IN · 2 DROP · 3 BREAK · 4 MIX OUT, agganciati alla battuta |
+| Loop | 5 INTRO 16 battute · 6 OUTRO 16 battute |
+| Chiave | `INITIALKEY` più la notazione Camelot nel commento |
+| Volume | `REPLAYGAIN_TRACK_GAIN`, allineato a -18 LUFS |
+| Nome | `128 - 8A - Am - Artista - Titolo.flac` |
+
+Con `BPMLOCK` attivo Mixxx **non rianalizza** il brano e non sovrascrive la
+griglia. Un cue che non si riesce a individuare con sicurezza viene omesso, con
+il motivo scritto nel log: quattro cue di cui fidarsi valgono più di sei da
+ricontrollare.
+
+## Perché FLAC e non WAV
+
+Il WAV non può contenere i tag Serato: nel sorgente di Mixxx,
+`src/track/taglib/trackmetadata_riff.cpp` non ne ha alcun supporto, mentre ID3,
+MP4 e Xiph sì. In MP3 le posizioni dei cue vanno inoltre corrette con un offset
+che dipende dal decoder (`src/track/serato/tags.cpp:86`); in FLAC sono esatte al
+campione.
+
+Da una sorgente compressa il FLAC non recupera qualità — è un contenitore, non
+una promessa. Per questo l'etichetta dice «FLAC da sorgente lossy (≈128-160
+kbps)» quando è così, invece di limitarsi a «lossless».
+
+## Verifica
+
+```bash
+python tests/test_serato.py      # encoder Serato contro i blob reali di Serato DJ
+python dj_prep.py inspect x.flac # rilegge dal file quello che leggerà Mixxx
+```
+
+I test confrontano quello che scriviamo con le fixture in
+`mixxx-main/src/test/serato/data/`, cioè byte prodotti davvero da Serato DJ. Se
+il round-trip è identico, il parser di Mixxx leggerà anche il nostro output.
+
+Il ciclo completo è stato verificato su Mixxx 2.5.4: una traccia preparata da
+edi.audio entra in Mixxx con BPM, chiave, griglia, 4 hot cue, 2 loop e il blocco
+del BPM già impostati; una correzione fatta in Mixxx torna nel file e viene
+riconosciuta e conservata dalla ri-analisi successiva.
+
+## File
+
+| | |
+|---|---|
+| `dj_prep.py` | CLI |
+| `web_app.py`, `index.html` | web app |
+| `dj/sources.py`, `dj/quality.py` | scelta della sorgente e misura della qualità |
+| `dj/analyzer_worker.py`, `dj/analysis.py` | analisi audio |
+| `dj/cues.py` | posizionamento di cue e loop |
+| `dj/serato.py`, `dj/tags.py` | formato Serato e scrittura nel FLAC |
+| `dj/export.py` | playlist M3U8, cartelle per genere e Rekordbox XML |
+| `dj/mixxx.py` | crate per Mixxx e verifica del round-trip |
+| `dj/state.py` | registro delle analisi, fuori dai file audio |
+| `core.py`, `downloader.py`, `app.py` | download di base (senza preparazione) |
+
+## Design
+
+L'interfaccia segue il design system di edi.audio: il mixer come interfaccia,
+pannelli scuri e un solo colore acceso, il lime, riservato a ciò che è attivo
+o pronto. Token, tipografia e componenti sono in
+[`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) (anche in PDF); il visual di
+riferimento è in `brand/`.

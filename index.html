@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>edi.audio</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D0E0F'/%3E%3Ccircle cx='32' cy='32' r='13' fill='%23B6F23C'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* Token e componenti: vedi DESIGN_SYSTEM.md */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      color-scheme: dark;
+      --ink-0: #08090A; --ink-1: #0D0E0F; --ink-2: #121313;
+      --ink-3: #18191A; --ink-4: #232527; --ink-5: #3C3E40;
+      --steel-4: #5E6065; --steel-3: #8E9094; --steel-2: #B9BBBE;
+      --paper: #EEEFF0;
+      --lime: #B6F23C; --lime-hi: #D4FF72; --lime-lo: #7FB51E;
+      --lime-glow: rgba(182, 242, 60, .35);
+      --lime-wash: rgba(182, 242, 60, .10);
+      --ok: var(--lime); --warn: #F5B83D; --err: #FF5A4E;
+      --font-ui: 'Barlow', system-ui, sans-serif;
+      --font-num: 'Barlow Condensed', 'Barlow', sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+      --r-xs: 3px; --r-sm: 6px; --r-md: 8px; --r-frame: 18px;
+      --m-fast: 120ms cubic-bezier(.2, 0, 0, 1);
+      --m-base: 200ms cubic-bezier(.2, 0, 0, 1);
+      /* Viti agli angoli dei pannelli */
+      --screw: radial-gradient(circle, var(--ink-5) 0 3px, var(--ink-1) 3.5px 4px, transparent 4.5px);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-ui); font-size: 15px; line-height: 1.5;
+      background: var(--ink-0); color: var(--steel-2);
+      -webkit-font-smoothing: antialiased; padding: 20px;
+    }
+    button, input { font: inherit; }
+    :focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+
+    /* ── Telaio ── */
+    .device {
+      max-width: 1240px; margin: 0 auto; padding: 18px;
+      background: var(--ink-1); border: 2px solid var(--lime);
+      border-radius: var(--r-frame);
+      box-shadow: 0 0 40px rgba(182, 242, 60, .06);
+      display: flex; flex-direction: column; gap: 14px;
+    }
+
+    /* ── Pannello ── */
+    .panel {
+      position: relative; border: 1px solid var(--ink-4); border-radius: var(--r-md);
+      background:
+        var(--screw) 0 0 / 22px 22px no-repeat,
+        var(--screw) 100% 0 / 22px 22px no-repeat,
+        var(--screw) 0 100% / 22px 22px no-repeat,
+        var(--screw) 100% 100% / 22px 22px no-repeat,
+        linear-gradient(180deg, #171919 0%, var(--ink-2) 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 1px 0 rgba(0,0,0,.6);
+      padding: 22px 26px;
+    }
+    .screen {
+      background: #0E0F0F; border-radius: var(--r-sm);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,.7), inset 0 0 0 1px var(--ink-4);
+    }
+    .label {
+      font-size: 12px; font-weight: 600; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--paper);
+    }
+    .label .sep { color: var(--steel-3); margin: 0 .5em; }
+    .panel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+    }
+
+    /* ── Barra superiore ── */
+    .topbar {
+      display: flex; align-items: center; gap: 22px; flex-wrap: wrap;
+      padding: 6px 8px 4px;
+    }
+    .wordmark {
+      font-size: 52px; font-weight: 800; letter-spacing: -.02em; line-height: 1;
+      color: var(--paper); white-space: nowrap;
+    }
+    .wordmark i {
+      display: inline-block; width: .2em; height: .2em; border-radius: 50%;
+      background: var(--lime); margin: 0 .03em; vertical-align: .02em;
+      box-shadow: 0 0 10px var(--lime-glow);
+    }
+    .tagline {
+      color: var(--steel-2); font-size: 17px; padding-left: 22px;
+      border-left: 1px solid var(--ink-5); line-height: 1.3;
+    }
+    .add-row { display: flex; gap: 10px; margin-left: auto; flex: 1; min-width: 300px; max-width: 560px; }
+
+    .field {
+      display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;
+      height: 48px; padding: 0 14px; border-radius: var(--r-sm);
+      background: var(--ink-3); border: 1px solid var(--ink-5);
+      transition: border-color var(--m-fast);
+    }
+    .field:focus-within { border-color: var(--lime); }
+    .field svg { flex: none; color: var(--steel-3); }
+    .field input {
+      flex: 1; min-width: 0; background: none; border: 0; outline: none;
+      color: var(--paper); font-size: 15px;
+    }
+    .field input::placeholder { color: var(--steel-3); }
+    .field-sm { height: 40px; }
+    .field-sm input { font-family: var(--font-mono); font-size: 13px; }
+
+    /* ── Pulsanti ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      height: 40px; padding: 0 18px; border-radius: var(--r-sm);
+      font-weight: 600; font-size: 14px; white-space: nowrap; cursor: pointer;
+      border: 1px solid var(--ink-5); background: var(--ink-3); color: var(--paper);
+      transition: background var(--m-fast), border-color var(--m-fast), color var(--m-fast);
+    }
+    .btn:hover:not(:disabled) { border-color: var(--steel-3); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-primary {
+      height: 48px; padding: 0 26px; background: var(--ink-1);
+      border: 2px solid var(--lime); color: var(--paper);
+      font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--lime); border-color: var(--lime); color: var(--ink-1); }
+    .btn-primary:active:not(:disabled) { background: var(--lime-lo); border-color: var(--lime-lo); }
+    .btn-add { height: 48px; }
+    .btn-ghost { background: transparent; border-color: transparent; color: var(--steel-2); }
+    .btn-ghost:hover:not(:disabled) { background: var(--ink-3); border-color: transparent; color: var(--paper); }
+    .btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
+
+    /* ── Stato ── */
+    .status-line {
+      display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+      font-family: var(--font-mono); font-size: 13px; color: var(--steel-2);
+    }
+    .status-bar { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .status-bar::before { content: '▸ '; color: var(--lime); }
+    .pct { font-family: var(--font-num); font-weight: 700; font-size: 14px; letter-spacing: .1em;
+           text-transform: uppercase; color: var(--lime); min-width: 3ch; text-align: right; }
+
+    /* ── Pipeline: 4 moduli ── */
+    .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .module { display: flex; flex-direction: column; min-height: 196px; }
+    .module + .module::before {
+      content: '›'; position: absolute; left: -12px; top: 42%;
+      color: var(--steel-2); font-size: 26px; line-height: 1;
+    }
+    .module-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-bottom: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--ink-5);
+    }
+    .phase-num {
+      font-family: var(--font-num); font-weight: 700; font-size: 48px; line-height: 1;
+      color: var(--steel-4); font-variant-numeric: tabular-nums;
+      transition: color var(--m-base);
+    }
+    .module-head svg { color: var(--steel-2); }
+    .module h3 { font-size: 24px; font-weight: 600; line-height: 1.15; color: var(--paper); margin-bottom: 6px; }
+    .module p { font-size: 14px; line-height: 1.55; }
+    .module-foot { margin-top: auto; padding-top: 12px; display: flex; align-items: center; justify-content: space-between; }
+    .module-foot .ctl { font-family: var(--font-num); font-size: 12px; font-weight: 600; letter-spacing: .14em; color: var(--steel-2); }
+
+    .leds { display: flex; gap: 6px; }
+    .led { width: 7px; height: 7px; border-radius: 50%; background: var(--steel-4); opacity: .5;
+           transition: background 250ms, opacity 250ms, box-shadow 250ms; }
+    .led.on { background: var(--lime); opacity: 1; box-shadow: 0 0 6px var(--lime-glow), 0 0 14px var(--lime-glow); transition: none; }
+    .module.active .phase-num, .module.done .phase-num { color: var(--paper); }
+    .module.active .module-head svg { color: var(--lime); }
+    .module.active .led:last-child { animation: pulse 1.2s ease-in-out infinite; }
+    @keyframes pulse { 50% { box-shadow: 0 0 2px var(--lime-glow); opacity: .6; } }
+
+    .meter { height: 6px; flex: 1; border-radius: var(--r-xs); background: var(--ink-4); overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; background: var(--lime); box-shadow: 0 0 8px var(--lime-glow); transition: width .3s; }
+
+    /* ── Deck: coda + opzioni ── */
+    .deck { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 14px; }
+    .deck > .panel:first-child { display: flex; flex-direction: column; }
+    .queue-box { flex: 1; min-height: 150px; max-height: 420px; overflow-y: auto; }
+    .queue-item {
+      display: flex; align-items: center; gap: 12px; padding: 11px 14px; font-size: 14px;
+    }
+    .queue-item + .queue-item { border-top: 1px solid var(--ink-4); }
+    .queue-item .source {
+      font-family: var(--font-num); font-size: 12px; font-weight: 600; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--steel-2);
+      padding: 2px 8px; border-radius: var(--r-xs); border: 1px solid var(--ink-5); white-space: nowrap;
+    }
+    .source { font-family: var(--font-num); font-size: 12px; font-weight: 600; letter-spacing: .1em;
+              text-transform: uppercase; color: var(--steel-2); padding: 2px 8px;
+              border-radius: var(--r-xs); border: 1px solid var(--ink-5); white-space: nowrap; }
+    .queue-item .url-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--paper); }
+    .queue-result { font-family: var(--font-mono); font-size: 12px; color: var(--steel-2); white-space: nowrap; }
+    .status-badge { font-size: 13px; white-space: nowrap; font-weight: 500; }
+    .status-pending { color: var(--steel-3); }
+    .status-running { color: var(--lime); }
+    .status-done { color: var(--lime); font-weight: 600; }
+    .status-error { color: var(--err); font-weight: 600; }
+    .queue-remove { background: none; border: none; cursor: pointer; color: var(--steel-3);
+                    font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: var(--r-xs); }
+    .queue-remove:hover { color: var(--err); background: var(--ink-3); }
+    .queue-empty { display: flex; align-items: center; justify-content: center; height: 150px;
+                   color: var(--steel-3); font-size: 14px; }
+
+    .controls { display: flex; flex-direction: column; gap: 14px; }
+    .opt-check { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; cursor: pointer; color: var(--steel-2); }
+    .opt-check input {
+      appearance: none; flex: none; width: 16px; height: 16px; margin-top: 2px;
+      border: 1.5px solid var(--steel-2); border-radius: var(--r-xs); background: transparent;
+      display: grid; place-items: center; cursor: pointer;
+    }
+    .opt-check input:checked { border-color: var(--lime); }
+    .opt-check input:checked::after {
+      content: ''; width: 8px; height: 4px; border: 2px solid var(--lime);
+      border-top: 0; border-right: 0; transform: translateY(-1px) rotate(-45deg);
+    }
+    .controls .btn-primary { width: 100%; margin-top: auto; }
+    .ctl-label { font-family: var(--font-num); font-size: 12px; font-weight: 600; letter-spacing: .14em;
+                 text-transform: uppercase; color: var(--steel-3); margin-bottom: 6px; }
+    .opts-note { font-size: 13px; color: var(--warn); }
+    .opts-note:empty, .mixxx-note:empty { display: none; }
+    .mixxx-note { font-size: 13px; padding: 10px 12px; border-left: 3px solid var(--lime); color: var(--steel-2); }
+    .mixxx-note strong { color: var(--paper); font-weight: 600; }
+
+    /* ── Tabelle ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 14px; }
+    th { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+         color: var(--steel-3); background: var(--ink-1); white-space: nowrap; }
+    td { border-top: 1px solid var(--ink-4); vertical-align: middle; }
+    tbody tr:hover td { background: var(--ink-3); }
+    .table-empty { text-align: center; color: var(--steel-3); font-size: 14px; padding: 28px 14px; }
+    tbody tr:hover .table-empty { background: none; }
+    .bpm-cell { font-family: var(--font-num); font-weight: 700; font-size: 22px; color: var(--paper);
+                font-variant-numeric: tabular-nums; line-height: 1; }
+    .camelot { font-family: var(--font-num); font-size: 14px; font-weight: 700; letter-spacing: .04em;
+               padding: 1px 8px; border-radius: var(--r-xs); border: 1px solid var(--lime); color: var(--lime); }
+    .key-name { font-family: var(--font-num); font-weight: 600; font-size: 16px; color: var(--paper); margin-right: 8px; }
+    .track-title { font-weight: 500; color: var(--paper); }
+    .track-artist { font-size: 13px; color: var(--steel-3); }
+    .genre-cell { font-size: 13px; color: var(--steel-2); }
+    .muted { color: var(--steel-3); font-size: 13px; }
+
+    /* Pallini dei cue: stesso colore che avranno in Mixxx */
+    .cue-dots { display: flex; gap: 4px; align-items: center; }
+    .cue-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+    .cue-loop { width: 13px; height: 6px; border-radius: 3px; background: #27AAE1; flex: none; }
+
+    /* Badge qualità: il colore dice quanto ci si può fidare della sorgente */
+    .qbadge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: var(--r-xs);
+              white-space: nowrap; cursor: help; border: 1px solid currentColor; }
+    .q-high { color: var(--lime); background: rgba(182,242,60,.08); }
+    .q-mid  { color: var(--warn); background: rgba(245,184,61,.08); }
+    .q-low  { color: var(--err);  background: rgba(255,90,78,.08); }
+
+    /* Una traccia con correzioni manuali non va più toccata dagli automatismi */
+    .edited { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+              padding: 1px 6px; margin-left: 6px; border-radius: var(--r-xs);
+              color: var(--ink-1); background: var(--lime); white-space: nowrap; vertical-align: 2px; }
+
+    /* ── Barra destinazioni ── */
+    .outputs { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; padding: 8px 8px 2px; }
+    .outputs .label { color: var(--steel-2); padding-right: 18px; border-right: 1px solid var(--ink-5); }
+    .chips { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 14px; flex: 1; }
+    .chip { height: 44px; display: grid; place-items: center; border-radius: var(--r-sm);
+            background: var(--ink-3); border: 1px solid var(--ink-5); color: var(--paper); font-weight: 600; }
+    .level { display: flex; align-items: flex-end; gap: 4px; height: 36px; }
+    .level span { width: 5px; border-radius: 1px; background: var(--ink-5); }
+    .level span.on { background: var(--lime); }
+
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 100;
+      background: var(--ink-3); color: var(--paper); border: 1px solid var(--ink-5);
+      border-left: 3px solid var(--steel-2); border-radius: var(--r-sm);
+      padding: 12px 18px; font-size: 14px; font-weight: 500;
+      opacity: 0; transform: translateY(12px); pointer-events: none;
+      transition: opacity var(--m-base), transform var(--m-base);
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { border-left-color: var(--err); }
+    .toast.success { border-left-color: var(--lime); }
+
+    @media (max-width: 1040px) {
+      .pipeline { grid-template-columns: repeat(2, 1fr); }
+      .module:nth-child(3)::before { display: none; }
+      .deck { grid-template-columns: 1fr; }
+      .add-row { max-width: none; flex-basis: 100%; }
+    }
+    @media (max-width: 640px) {
+      body { padding: 8px; }
+      .device { padding: 10px; }
+      .panel { padding: 18px 16px; }
+      .wordmark { font-size: 40px; }
+      .tagline { border-left: 0; padding-left: 0; flex-basis: 100%; }
+      .add-row { flex-direction: column; min-width: 0; }
+      .add-row .field { flex: none; }
+      .pipeline { grid-template-columns: 1fr; }
+      .module::before { display: none; }
+      .chips { grid-template-columns: repeat(2, 1fr); }
+      .outputs .label { border-right: 0; }
+      .level { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="device">
+
+  <header class="topbar">
+    <h1 class="wordmark">edi<i></i>audio</h1>
+    <p class="tagline">Da un link a una traccia pronta per il DJ set</p>
+    <div class="add-row">
+      <label class="field">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <input id="urlInput" placeholder="URL, playlist o «artista - titolo»" aria-label="URL o titolo" autofocus>
+      </label>
+      <button class="btn btn-add" id="addBtn">+ In coda</button>
+    </div>
+  </header>
+
+  <div class="screen status-line">
+    <span class="status-bar" id="statusBar">Pronto.</span>
+    <div class="meter" style="max-width:220px"><div class="progress-bar" id="progressBar"></div></div>
+    <span class="pct" id="pctLabel"></span>
+  </div>
+
+  <!-- Le quattro fasi della pipeline: il LED dice a che punto è la traccia in lavorazione -->
+  <section class="pipeline" aria-label="Fasi">
+    <div class="panel module" data-step="1">
+      <div class="module-head">
+        <span class="phase-num">01</span>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M5 20v-4M10 20v-8M15 20v-12M20 20V4"/></svg>
+      </div>
+      <h3>Sorgente migliore</h3>
+      <p>Verifica dello spettro reale<br>Priorità ai file lossless</p>
+      <div class="module-foot"><span class="ctl">QUALITY</span><div class="leds"><span class="led"></span><span class="led"></span><span class="led"></span><span class="led"></span></div></div>
+    </div>
+    <div class="panel module" data-step="2">
+      <div class="module-head">
+        <span class="phase-num">02</span>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v12M6 10l6 6 6-6M4 21h16"/></svg>
+      </div>
+      <h3>Download FLAC</h3>
+      <p>Audio lossless autentico<br>Dal link o dal titolo</p>
+      <div class="module-foot"><span class="ctl">DOWNLOAD</span><div class="leds"><span class="led"></span><span class="led"></span><span class="led"></span><span class="led"></span></div></div>
+    </div>
+    <div class="panel module" data-step="3">
+      <div class="module-head">
+        <span class="phase-num">03</span>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 20v-6M9 20V8M14 20v-9M19 20V5"/></svg>
+      </div>
+      <h3>Analisi</h3>
+      <p>BPM e griglia dei beat<br>Tonalità in Camelot<br>Struttura del brano</p>
+      <div class="module-foot"><span class="ctl">ANALYSE</span><div class="leds"><span class="led"></span><span class="led"></span><span class="led"></span><span class="led"></span></div></div>
+    </div>
+    <div class="panel module" data-step="4">
+      <div class="module-head">
+        <span class="phase-num">04</span>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor"/></svg>
+      </div>
+      <h3>Tag nel file</h3>
+      <p>Hot cue e loop<br>Guadagno normalizzato<br>Nome ordinato per BPM</p>
+      <div class="module-foot"><span class="ctl">TAG</span><div class="leds"><span class="led"></span><span class="led"></span><span class="led"></span><span class="led"></span></div></div>
+    </div>
+  </section>
+
+  <section class="deck">
+    <!-- Coda -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">Coda<span class="sep">·</span>Download</span>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" id="expandBtn" title="Sostituisci le playlist in coda con le tracce che contengono">Espandi playlist</button>
+          <button class="btn btn-ghost btn-sm" id="removeBtn">Rimuovi</button>
+          <button class="btn btn-ghost btn-sm" id="clearBtn">Svuota</button>
+        </div>
+      </div>
+      <div class="screen queue-box" id="queueBox">
+        <div class="queue-empty" id="queueEmpty">Nessun link in coda.</div>
+      </div>
+    </div>
+
+    <!-- Opzioni + Azione -->
+    <div class="panel controls">
+      <span class="label">Opzioni</span>
+      <label class="opt-check" title="Cerca il brano anche altrove e usa la sorgente che misura meglio">
+        <input type="checkbox" id="searchAlt" checked> Cerca la sorgente migliore
+      </label>
+      <label class="opt-check" title="Non penalizzare live, remix e versioni accelerate">
+        <input type="checkbox" id="allowVariants"> Accetta versioni alternative
+      </label>
+      <div>
+        <div class="ctl-label">Cartella libreria</div>
+        <label class="field field-sm"><input id="dirInput" value="" placeholder="~/Musica/DJ" aria-label="Cartella libreria"></label>
+      </div>
+      <p class="opts-note" id="capNote"></p>
+      <p class="mixxx-note screen" id="mixxxNote"></p>
+      <button class="btn btn-primary" id="downloadBtn">Prepara tutto</button>
+    </div>
+  </section>
+
+  <!-- Libreria pronta -->
+  <section class="panel">
+    <div class="panel-head">
+      <span class="label">Libreria<span class="sep">·</span>Griglia<span class="sep">·</span>Cue<span class="sep">·</span>Loop</span>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" id="sortBpmBtn">Ordina per BPM</button>
+        <button class="btn btn-ghost btn-sm" id="sortKeyBtn">Ruota Camelot</button>
+        <button class="btn btn-ghost btn-sm" id="rescanBtn" title="Prepara i FLAC già presenti nella cartella">Prepara esistenti</button>
+        <button class="btn btn-ghost btn-sm" id="organizeBtn" title="Sposta i file in sottocartelle per genere">Organizza per genere</button>
+        <button class="btn btn-sm" id="exportBtn" title="Playlist M3U8, crate per Mixxx e rekordbox.xml">Esporta</button>
+      </div>
+    </div>
+    <div class="screen table-wrap">
+      <table>
+        <thead>
+          <tr><th>BPM</th><th>Tonalità / Camelot</th><th>Traccia</th><th>Genere</th><th>Cue</th><th>Qualità</th></tr>
+        </thead>
+        <tbody id="tracksBody">
+          <tr><td colspan="6" class="table-empty">Nessuna traccia preparata.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Cronologia -->
+  <section class="panel">
+    <div class="panel-head"><span class="label">Cronologia</span></div>
+    <div class="screen table-wrap">
+      <table>
+        <thead>
+          <tr><th>Titolo / URL</th><th>Sorgente</th><th>Formato</th><th>Data</th></tr>
+        </thead>
+        <tbody id="historyBody">
+          <tr><td colspan="4" class="table-empty">Nessun download ancora.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="outputs">
+    <span class="label">Si apre in</span>
+    <div class="chips">
+      <span class="chip">Mixxx</span><span class="chip">Serato</span>
+      <span class="chip">Rekordbox</span><span class="chip">Denon Engine</span>
+    </div>
+    <div class="level" aria-hidden="true">
+      <span style="height:8px"></span><span style="height:11px"></span><span style="height:14px"></span><span style="height:18px"></span>
+      <span class="on" style="height:22px"></span><span class="on" style="height:27px"></span><span class="on" style="height:32px"></span><span class="on" style="height:36px"></span>
+    </div>
+  </footer>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──
+let queue = [];
+let downloading = false;
+let selectedIdx = -1;
+
+// ── DOM refs ──
+const urlInput = document.getElementById('urlInput');
+const addBtn = document.getElementById('addBtn');
+const queueBox = document.getElementById('queueBox');
+const queueEmpty = document.getElementById('queueEmpty');
+const removeBtn = document.getElementById('removeBtn');
+const clearBtn = document.getElementById('clearBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const statusBar = document.getElementById('statusBar');
+const progressBar = document.getElementById('progressBar');
+const pctLabel = document.getElementById('pctLabel');
+const historyBody = document.getElementById('historyBody');
+const toast = document.getElementById('toast');
+
+// ── Helpers ──
+function sourceLabel(url) {
+  const u = url.toLowerCase();
+  if (u.includes('spotify')) return 'Spotify';
+  if (u.includes('youtube') || u.includes('youtu.be')) return 'YouTube';
+  if (u.includes('soundcloud')) return 'SoundCloud';
+  if (u.includes('bandcamp')) return 'Bandcamp';
+  return 'Web';
+}
+
+function sourceClass(url) {
+  const m = { spotify: 'source-spotify', youtube: 'source-youtube', soundcloud: 'source-soundcloud', bandcamp: 'source-bandcamp' };
+  for (const [k, v] of Object.entries(m)) { if (url.toLowerCase().includes(k)) return v; }
+  return 'source-web';
+}
+
+function showToast(msg, type = '') {
+  toast.textContent = msg; toast.className = 'toast ' + type + ' show';
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function fmtTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return d.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+// ── Render queue ──
+function renderQueue() {
+  const items = queue.filter(i => i.url);
+  queueBox.innerHTML = '';
+  if (items.length === 0) {
+    queueBox.innerHTML = '<div class="queue-empty">Nessun link in coda.</div>';
+    return;
+  }
+  items.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'queue-item';
+    div.dataset.index = i;
+    const src = sourceLabel(item.url);
+    const status = item.status || '⏳ in attesa';
+    const statusClass = status.includes('pronta') ? 'status-done' : status.includes('errore') ? 'status-error' : status.includes('in corso') ? 'status-running' : 'status-pending';
+    const result = item.result;
+    const resultLabel = result?.ok
+      ? [result.bpm ? `${Math.round(result.bpm)} BPM` : '',
+         result.key ? `Tonalità ${result.key}${result.camelot ? ` (${result.camelot})` : ''}` : 'Tonalità non rilevata']
+          .filter(Boolean).join(' · ')
+      : '';
+    div.innerHTML = `
+      <span class="source ${sourceClass(item.url)}">${src}</span>
+      <span class="url-text" title="${escapeHtml(item.url)}">${escapeHtml(item.label || item.url)}</span>
+      ${resultLabel ? `<span class="queue-result">${escapeHtml(resultLabel)}</span>` : ''}
+      <span class="status-badge ${statusClass}">${status}</span>
+      <button class="queue-remove" data-idx="${i}" ${downloading ? 'disabled' : ''}>&times;</button>
+    `;
+    div.querySelector('.queue-remove').addEventListener('click', () => removeItem(i));
+    queueBox.appendChild(div);
+  });
+}
+
+// ── API calls ──
+async function addUrl() {
+  const url = urlInput.value.trim();
+  if (!url) return;
+  const res = await fetch('/api/queue', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
+  if (res.status === 409) {
+    showToast('Già scaricato in precedenza.', 'error');
+    urlInput.value = ''; urlInput.focus(); return;
+  }
+  if (!res.ok) { showToast('Errore aggiunta link', 'error'); return; }
+  urlInput.value = ''; urlInput.focus();
+  await refreshQueue();
+  showToast('Aggiunto alla coda', 'success');
+}
+
+async function refreshQueue() {
+  const res = await fetch('/api/queue');
+  const data = await res.json();
+  queue = data;
+  renderQueue();
+}
+
+async function removeItem(idx) {
+  await fetch('/api/queue/' + idx, { method: 'DELETE' });
+  await refreshQueue();
+}
+
+async function clearQueue() {
+  if (downloading) return;
+  await fetch('/api/queue', { method: 'DELETE' });
+  await refreshQueue();
+}
+
+let defaultDir = '';
+
+function currentDir() {
+  return document.getElementById('dirInput').value.trim() || defaultDir;
+}
+
+async function startDownload() {
+  if (downloading) { showToast('Operazione già in corso', 'error'); return; }
+  const res = await fetch('/api/download', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      output_dir: currentDir(),
+      search_alternatives: document.getElementById('searchAlt').checked,
+      allow_variants: document.getElementById('allowVariants').checked,
+    }),
+  });
+  if (!res.ok) { const e = await res.json(); showToast(e.error || 'Errore', 'error'); return; }
+  downloading = true;
+  downloadBtn.disabled = true;
+  statusBar.textContent = 'Preparazione in corso…';
+  pollStatus();
+}
+
+async function pollStatus() {
+  const res = await fetch('/api/status');
+  const data = await res.json();
+  downloading = data.downloading;
+  downloadBtn.disabled = downloading;
+
+  // Le fasi (sorgente → scarico → analizzo → cue → tag) sostituiscono la
+  // percentuale: l'analisi è la parte lenta e non ha un avanzamento in byte,
+  // quindi dire *cosa* sta succedendo informa più di una barra ferma.
+  for (const msg of data.messages) {
+    if (msg[0] === 'phase') {
+      const phase = msg[1], text = msg[2] || '';
+      statusBar.textContent = text ? `${phase} — ${text}` : phase;
+      pctLabel.textContent = phase;
+      progressBar.style.width = (PHASE_PROGRESS[phase] || 0) + '%';
+      setPhase(phase);
+    } else if (msg[0] === 'error') {
+      statusBar.textContent = '❌ ' + msg[1];
+    } else if (msg[0] === 'info') {
+      statusBar.textContent = msg[1];
+    } else if (msg[0] === 'done') {
+      statusBar.textContent = '✅ Tutto pronto.';
+      progressBar.style.width = '0%';
+      pctLabel.textContent = '';
+      setPhase(null);
+      refreshHistory();
+      refreshTracks();
+    }
+  }
+
+  // Sync queue status
+  if (data.items) {
+    queue = data.items;
+    renderQueue();
+    const running = data.items.find(i => i.status && i.status.includes('in corso'));
+    if (running && running.phase) {
+      setPhase(running.phase);
+      const idx = data.items.indexOf(running);
+      statusBar.textContent =
+        `[${idx + 1}/${data.items.length}] ${running.phase}` +
+        (running.message ? ` — ${running.message}` : '');
+    }
+  }
+
+  if (downloading) {
+    setTimeout(pollStatus, 600);
+  } else {
+    downloadBtn.disabled = false;
+    progressBar.style.width = '0%';
+    pctLabel.textContent = '';
+    setPhase(null);
+  }
+}
+
+// La barra non può misurare l'avanzamento reale dell'analisi, ma può almeno
+// dire a che punto del percorso siamo.
+const PHASE_PROGRESS = {
+  sorgente: 10, scarico: 35, analizzo: 65, cue: 80, tag: 90, rinomino: 95, pronto: 100,
+};
+
+// Ogni fase della pipeline accende il LED del suo modulo: i moduli già
+// attraversati restano accesi, quello in corso pulsa.
+const PHASE_STEP = {
+  sorgente: 1, scarico: 2, analizzo: 3, cue: 4, tag: 4, rinomino: 4, pronto: 5,
+};
+const modules = document.querySelectorAll('.module');
+
+function setPhase(phase) {
+  const step = PHASE_STEP[phase] || 0;
+  modules.forEach(m => {
+    const n = +m.dataset.step;
+    m.classList.toggle('active', n === step);
+    m.classList.toggle('done', n < step);
+    m.querySelectorAll('.led').forEach((led, i, all) => {
+      led.classList.toggle('on', n < step || (n === step && i === all.length - 1));
+    });
+  });
+}
+
+let tracks = [];
+let trackSort = 'bpm';
+
+function qualityClass(score) {
+  if (score >= 75) return 'q-high';
+  if (score >= 50) return 'q-mid';
+  return 'q-low';
+}
+
+function camelotOrder(camelot) {
+  // Ordina lungo la ruota (1A, 1B, 2A…), non alfabeticamente: 2A deve venire
+  // dopo 1B, altrimenti l'elenco non serve a mixare in armonia.
+  const m = /^(\d+)([AB])$/.exec(camelot || '');
+  return m ? parseInt(m[1]) * 2 + (m[2] === 'B' ? 1 : 0) : 999;
+}
+
+function cueDots(track) {
+  const dots = (track.cues || [])
+    .map(c => `<span class="cue-dot" style="background:${c.color}" title="${c.label} @ ${(c.position_ms / 1000).toFixed(1)}s"></span>`)
+    .join('');
+  const loops = (track.loops || [])
+    .map(l => `<span class="cue-loop" title="${l.label}: ${(l.start_ms / 1000).toFixed(1)}s → ${(l.end_ms / 1000).toFixed(1)}s"></span>`)
+    .join('');
+  return dots + loops || '<span class="muted">—</span>';
+}
+
+function renderTracks() {
+  const body = document.getElementById('tracksBody');
+  if (!tracks.length) {
+    body.innerHTML = '<tr><td colspan="6" class="table-empty">Nessuna traccia preparata.</td></tr>';
+    return;
+  }
+
+  const rows = tracks.slice().sort((a, b) => (
+    trackSort === 'bpm'
+      ? (a.bpm || 0) - (b.bpm || 0)
+      : camelotOrder(a.camelot) - camelotOrder(b.camelot) || (a.bpm || 0) - (b.bpm || 0)
+  ));
+
+  body.innerHTML = '';
+  for (const t of rows) {
+    // La sorgente è scritta in un campo suo, che conserva il codec di origine;
+    // il commento è il ripiego per i file preparati prima che esistesse.
+    const quality = t.source
+      || (t.comment || '').split(' · ').find(x => /kbps|lossless|sorgente/i.test(x))
+      || '';
+    const score = /lossless/i.test(quality) && !/sorgente lossy/i.test(quality) ? 90
+                : /320|256/.test(quality) ? 70 : quality ? 40 : 0;
+    const tr = document.createElement('tr');
+    const edited = t.edited_manually
+      ? ' <span class="edited" title="Griglia o cue corretti fuori da edi.audio: una ri-analisi non li tocca">corretta a mano</span>'
+      : '';
+    tr.innerHTML = `
+      <td class="bpm-cell">${t.bpm ? Math.round(t.bpm) : '—'}</td>
+      <td>${t.key ? `<span class="key-name">${escapeHtml(t.key)}</span>` : ''}${t.camelot ? `<span class="camelot">${escapeHtml(t.camelot)}</span>` : ''}${!t.key && !t.camelot ? '—' : ''}</td>
+      <td>
+        <div class="track-title">${escapeHtml(t.title || t.relpath)}${edited}</div>
+        <div class="track-artist">${escapeHtml(t.artist || '')}</div>
+      </td>
+      <td class="genre-cell">${escapeHtml(t.genre || '—')}</td>
+      <td><div class="cue-dots">${cueDots(t)}</div></td>
+      <td>${quality ? `<span class="qbadge ${qualityClass(score)}" title="${escapeHtml(t.comment)}">${escapeHtml(quality)}</span>` : '—'}</td>
+    `;
+    body.appendChild(tr);
+  }
+}
+
+function escapeHtml(text) {
+  return String(text ?? '').replace(/[&<>"]/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+async function refreshTracks() {
+  const res = await fetch('/api/tracks?dir=' + encodeURIComponent(currentDir()));
+  tracks = await res.json();
+  renderTracks();
+}
+
+async function exportPlaylists(organize = false) {
+  const res = await fetch('/api/export', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dir: currentDir(), organize }),
+  });
+  const data = await res.json();
+  if (!res.ok) { showToast(data.error || 'Errore', 'error'); return; }
+  showToast(`${data.tracks} tracce · ${data.crates.length} crate · rekordbox.xml`
+    + (organize ? ' · file riorganizzati per genere' : ''));
+  refreshTracks();
+}
+
+async function expandPlaylists() {
+  const res = await fetch('/api/queue/expand', { method: 'POST' });
+  const data = await res.json();
+  if (!res.ok) { showToast(data.error || 'Errore', 'error'); return; }
+  showToast(data.added ? `${data.added} tracce aggiunte dalle playlist`
+                       : 'Nessuna playlist da espandere in coda');
+  refreshQueue();
+}
+
+async function rescanFolder() {
+  const res = await fetch('/api/rescan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dir: currentDir() }),
+  });
+  const data = await res.json();
+  if (!res.ok) { showToast(data.error || 'Errore', 'error'); return; }
+  downloading = true;
+  statusBar.textContent = 'Preparo le tracce già presenti…';
+  pollStatus();
+}
+
+// Senza il venv di analisi le tracce si scaricano ma restano senza BPM, tonalità e cue:
+// meglio dirlo subito che lasciarlo scoprire a fine download.
+async function checkCapabilities() {
+  const res = await fetch('/api/capabilities');
+  const caps = await res.json();
+
+  // La cartella predefinita la decide il server, così UI e CLI restano d'accordo
+  defaultDir = caps.output_dir || '';
+  const dirInput = document.getElementById('dirInput');
+  if (!dirInput.value) dirInput.value = defaultDir;
+
+  const problems = [];
+  if (!caps.ffmpeg) problems.push('ffmpeg non trovato: i download falliranno.');
+  if (!caps.analysis) problems.push('analisi non disponibile — ' + caps.analysis_hint + '.');
+  document.getElementById('capNote').textContent = problems.join(' ');
+
+  // Il round-trip con Mixxx non è un errore, è una configurazione da fare una
+  // volta sola: senza, le correzioni fatte a mano in Mixxx non tornano qui.
+  const note = document.getElementById('mixxxNote');
+  if (!caps.mixxx_installed) {
+    note.textContent = 'Mixxx non risulta installato: le tracce vengono preparate lo stesso.';
+  } else if (!caps.mixxx_roundtrip) {
+    note.innerHTML = '<strong>Mixxx non restituisce le correzioni fatte a mano.</strong> '
+      + escapeHtml(caps.mixxx_hint) + ' Da attivare una volta sola: '
+      + caps.mixxx_steps.map(escapeHtml).join(' · ');
+  } else {
+    note.textContent = `Round-trip con Mixxx attivo · ${caps.workers} tracce analizzate in parallelo`;
+  }
+}
+
+async function refreshHistory() {
+  const res = await fetch('/api/history');
+  const history = await res.json();
+  historyBody.innerHTML = '';
+  if (history.length === 0) {
+    historyBody.innerHTML = '<tr><td colspan="4" class="table-empty">Nessun download ancora.</td></tr>';
+    return;
+  }
+  for (const entry of history.slice().reverse()) {
+    const tr = document.createElement('tr');
+    const src = entry.source === 'spotify' ? 'Spotify' : 'Web';
+    const srcClass = entry.source === 'spotify' ? 'source-spotify' : 'source-web';
+    tr.innerHTML = `
+      <td>${entry.title || entry.url || ''}</td>
+      <td><span class="source ${srcClass}">${src}</span></td>
+      <td>${(entry.format || '').toUpperCase()}</td>
+      <td>${fmtTime(entry.timestamp)}</td>
+    `;
+    historyBody.appendChild(tr);
+  }
+}
+
+// ── Events ──
+addBtn.addEventListener('click', addUrl);
+urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') addUrl(); });
+removeBtn.addEventListener('click', async () => {
+  if (downloading) return;
+  const items = queueBox.querySelectorAll('.queue-item');
+  if (items.length > 0) {
+    await removeItem(items.length - 1);
+  }
+});
+clearBtn.addEventListener('click', clearQueue);
+downloadBtn.addEventListener('click', startDownload);
+
+// Libreria
+document.getElementById('exportBtn').addEventListener('click', () => exportPlaylists(false));
+document.getElementById('organizeBtn').addEventListener('click', () => exportPlaylists(true));
+document.getElementById('expandBtn').addEventListener('click', expandPlaylists);
+document.getElementById('rescanBtn').addEventListener('click', rescanFolder);
+document.getElementById('sortBpmBtn').addEventListener('click', () => {
+  trackSort = 'bpm'; renderTracks();
+});
+document.getElementById('sortKeyBtn').addEventListener('click', () => {
+  trackSort = 'camelot'; renderTracks();
+});
+document.getElementById('dirInput').addEventListener('change', refreshTracks);
+
+// ── Init ──
+checkCapabilities();
+refreshQueue();
+refreshHistory();
+refreshTracks();
+setInterval(() => {
+  if (!downloading) refreshQueue();
+}, 5000);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,19 @@
+# Download
+yt-dlp>=2024.0.0
+spotdl>=4.0.0
+
+# Web app
+flask>=3.0.0
+
+# Preparazione DJ: tag, ricerca del brano, confronto dei titoli
+mutagen>=1.47
+musicbrainzngs>=0.7.1
+rapidfuzz>=3.0
+
+# Analisi audio: BPM, griglia, chiave, struttura.
+# Installabile anche con ./setup_analysis_venv.sh, che gestisce il ripiego su
+# un interprete separato se librosa non si installa in questo ambiente.
+librosa>=1.0
+numpy>=1.24
+scipy>=1.10
+soundfile>=0.12

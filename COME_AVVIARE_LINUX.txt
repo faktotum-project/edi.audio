@@ -1,0 +1,134 @@
+=====================================================================
+  DJ DOWNLOADER — COME AVVIARLO SU LINUX
+=====================================================================
+
+L'app scarica canzoni e playlist (YouTube, SoundCloud, Bandcamp,
+Spotify) in WAV o MP3, pronte per i tuoi DJ set.
+
+Devi fare l'installazione UNA SOLA VOLTA (PASSO 1).
+Dalla seconda volta in poi basta il PASSO 2.
+
+
+---------------------------------------------------------------------
+PASSO 1 — INSTALLAZIONE (una sola volta)
+---------------------------------------------------------------------
+
+1. Apri un terminale nella cartella del progetto.
+   (Nella maggior parte dei file manager: tasto destro dentro la
+    cartella > "Apri terminale qui".)
+
+2. Rendi eseguibili gli script (solo la prima volta):
+
+      chmod +x installa.sh run.sh
+
+3. Avvia l'installazione automatica:
+
+      ./installa.sh
+
+   Lo script rileva la tua distribuzione e installa da solo:
+     - ffmpeg            (per convertire l'audio)
+     - python3-venv      (ambiente Python isolato)
+     - python3-tk        (interfaccia grafica)
+     - yt-dlp e spotdl   (i motori di download)
+
+   Ti verra' chiesta la password (sudo) per installare i pacchetti
+   di sistema. Al termine l'app si avvia da sola.
+
+   Distribuzioni supportate automaticamente:
+     Ubuntu/Debian/Mint (apt), Fedora (dnf),
+     Arch/Manjaro (pacman), openSUSE (zypper).
+
+
+---------------------------------------------------------------------
+PASSO 2 — AVVIARE L'APP (tutte le volte)
+---------------------------------------------------------------------
+
+Dal terminale, nella cartella del progetto:
+
+      ./run.sh
+
+Oppure, per usare la riga di comando senza interfaccia:
+
+      ./run.sh cli "INCOLLA-QUI-IL-LINK" --format wav
+
+
+---------------------------------------------------------------------
+AVVIO CON DOPPIO CLIC (facoltativo)
+---------------------------------------------------------------------
+
+Nella cartella trovi il file "DJ-Downloader.desktop".
+
+- Su molti ambienti desktop (GNOME, KDE, XFCE) puoi fare doppio clic
+  su quel file per avviare l'app. La prima volta il sistema potrebbe
+  chiederti di confermare "Considera attendibile / Consenti avvio".
+
+- Per averla nel menu delle applicazioni, copia il file qui:
+      cp DJ-Downloader.desktop ~/.local/share/applications/
+  (ricordati che Exec usa ./run.sh: l'app va lanciata dalla cartella
+   del progetto; se la sposti, aggiorna il percorso nel .desktop).
+
+
+---------------------------------------------------------------------
+COME SI USA L'APP
+---------------------------------------------------------------------
+
+1. Incolla un link nel campo "Link" e clicca "+ Aggiungi alla coda".
+   Puoi aggiungere piu' link, anche playlist intere.
+   Funziona con: YouTube, SoundCloud, Bandcamp e Spotify.
+
+2. Scegli il formato:
+   - WAV = massima qualita' audio (file piu' grandi)
+   - MP3 = con tag e copertina (scegli 320/256/192 kbps)
+
+3. Clicca "Sfoglia..." e scegli la cartella dove salvare i brani.
+
+4. Clicca "Scarica tutto". La barra mostra l'avanzamento e la
+   sezione "Cronologia" tiene traccia di cio' che hai gia' scaricato
+   (ti avvisa se stai per riscaricare lo stesso link).
+
+
+---------------------------------------------------------------------
+INSTALLAZIONE MANUALE (se ./installa.sh non funziona)
+---------------------------------------------------------------------
+
+Ubuntu / Debian / Mint:
+      sudo apt update
+      sudo apt install ffmpeg python3-venv python3-tk python3-pip
+      python3 -m venv .venv
+      .venv/bin/pip install -r requirements.txt
+      .venv/bin/python app.py
+
+Fedora:
+      sudo dnf install ffmpeg python3-tkinter python3-pip
+      python3 -m venv .venv
+      .venv/bin/pip install -r requirements.txt
+      .venv/bin/python app.py
+
+Arch / Manjaro:
+      sudo pacman -S ffmpeg python tk python-pip
+      python3 -m venv .venv
+      .venv/bin/pip install -r requirements.txt
+      .venv/bin/python app.py
+
+
+---------------------------------------------------------------------
+PROBLEMI FREQUENTI
+---------------------------------------------------------------------
+
+* "ModuleNotFoundError: No module named 'tkinter'"
+  -> manca python3-tk. Installalo (vedi sopra) e riprova.
+
+* L'app dice "ffmpeg mancante"
+  -> installa ffmpeg con il gestore pacchetti della tua distro.
+
+* "Permission denied" lanciando ./run.sh o ./installa.sh
+  -> esegui:  chmod +x installa.sh run.sh
+
+* Un download Spotify e' lento: e' normale, Spotify viene scaricato
+  cercando l'audio corrispondente su YouTube, qualche secondo in piu'
+  per brano.
+
+* Un brano di una playlist fallisce: l'app va avanti con gli altri e
+  segna quello fallito con la X rossa nella coda.
+
+=====================================================================

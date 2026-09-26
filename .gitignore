@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+downloads/
+.dj_downloader/
+
+# Strumenti e sorgenti di terze parti, solo locali
+.claude/
+.opencode/
+.swarm/
+mixxx-main/

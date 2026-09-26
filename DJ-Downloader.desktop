@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=DJ Downloader
+Comment=Scarica canzoni e playlist (YouTube, SoundCloud, Bandcamp, Spotify)
+Exec=bash -c "cd \\"$(dirname %k)\\" && ./run.sh"
+Path=
+Terminal=false
+Categories=AudioVideo;Audio;
+Icon=multimedia-audio-player

@@ -1,0 +1,162 @@
+=====================================================================
+  DJ DOWNLOADER — COME AVVIARLO SU WINDOWS
+=====================================================================
+
+L'app scarica canzoni e playlist (YouTube, SoundCloud, Bandcamp,
+Spotify) in WAV o MP3, pronte per i tuoi DJ set.
+
+Devi fare questi passaggi UNA SOLA VOLTA. Dalla seconda volta in poi
+basta il PASSO 4.
+
+
+---------------------------------------------------------------------
+PASSO 1 — INSTALLA PYTHON
+---------------------------------------------------------------------
+
+1. Vai su:  https://www.python.org/downloads/
+2. Clicca "Download Python" (versione 3.10 o piu' recente).
+3. Avvia l'installer.
+4. IMPORTANTISSIMO: nella prima schermata metti la spunta su
+   "Add python.exe to PATH" (in basso), POI clicca "Install Now".
+5. Al termine clicca "Close".
+
+Per verificare: apri il Prompt dei comandi (vedi PASSO 3) e scrivi:
+      python --version
+Deve comparire qualcosa tipo "Python 3.12.x".
+
+
+---------------------------------------------------------------------
+PASSO 2 — INSTALLA FFMPEG
+---------------------------------------------------------------------
+
+FFmpeg serve per convertire l'audio in WAV/MP3.
+
+MODO FACILE (consigliato), con un solo comando:
+
+1. Apri il Prompt dei comandi (vedi PASSO 3).
+2. Incolla questo comando e premi INVIO:
+
+      winget install --id=Gyan.FFmpeg -e
+
+3. Accetta eventuali richieste. Al termine CHIUDI e RIAPRI il
+   Prompt dei comandi (serve per aggiornare il PATH).
+
+Per verificare, scrivi:
+      ffmpeg -version
+Devono comparire alcune righe di testo (non un errore).
+
+--- Se "winget" non esiste sul tuo PC, MODO MANUALE: ---
+1. Vai su:  https://www.gyan.dev/ffmpeg/builds/
+2. Scarica "ffmpeg-release-essentials.zip".
+3. Estrai lo zip, per esempio in:  C:\ffmpeg
+4. Dentro troverai una cartella "bin" (es. C:\ffmpeg\bin).
+5. Aggiungi quella cartella "bin" al PATH di Windows:
+   - Premi tasto Windows, scrivi "variabili ambiente",
+     apri "Modifica le variabili d'ambiente del sistema".
+   - Clicca "Variabili d'ambiente...".
+   - Sotto "Variabili di sistema" seleziona "Path" > "Modifica".
+   - Clicca "Nuovo" e incolla:  C:\ffmpeg\bin
+   - OK su tutte le finestre.
+6. Chiudi e riapri il Prompt dei comandi, poi:  ffmpeg -version
+
+
+---------------------------------------------------------------------
+PASSO 3 — SCARICA L'APP (questo progetto)
+---------------------------------------------------------------------
+
+Se hai gia' la cartella del progetto sul PC, salta al PASSO 4.
+
+Per aprire il Prompt dei comandi in qualsiasi momento:
+   - Premi il tasto Windows, scrivi "cmd", premi INVIO.
+
+Per scaricare il progetto con Git (se hai Git installato):
+      git clone <URL-del-repository>
+Oppure scarica lo ZIP del progetto da GitHub ("Code" > "Download ZIP")
+ed estrailo in una cartella, ad esempio:  C:\dj
+
+
+---------------------------------------------------------------------
+PASSO 4 — AVVIA L'APP
+---------------------------------------------------------------------
+
+1. Apri il Prompt dei comandi (tasto Windows > "cmd" > INVIO).
+
+2. Spostati nella cartella del progetto. Esempio (se e' in C:\dj):
+      cd C:\dj
+
+   SUGGERIMENTO: puoi anche aprire la cartella in Esplora File,
+   cliccare sulla barra dell'indirizzo, scrivere "cmd" e premere
+   INVIO: il Prompt si aprira' gia' nella cartella giusta.
+
+3. La PRIMA volta, prepara l'ambiente (crea una cartella ".venv"
+   e installa il necessario). Incolla questi comandi uno alla volta:
+
+      python -m venv .venv
+      .venv\Scripts\python -m pip install --upgrade pip
+      .venv\Scripts\pip install -r requirements.txt
+
+   (Puo' richiedere qualche minuto la prima volta.)
+
+4. Avvia l'app:
+
+      .venv\Scripts\python app.py
+
+   Si aprira' la finestra del DJ Downloader.
+
+DALLA SECONDA VOLTA IN POI ti basta:
+      cd C:\dj
+      .venv\Scripts\python app.py
+
+
+---------------------------------------------------------------------
+COME SI USA L'APP
+---------------------------------------------------------------------
+
+1. Incolla un link nel campo "Link" e clicca "+ Aggiungi alla coda".
+   Puoi aggiungere piu' link (anche playlist intere).
+   Funziona con: YouTube, SoundCloud, Bandcamp e Spotify.
+
+2. Scegli il formato:
+   - WAV = massima qualita' audio (file piu' grandi)
+   - MP3 = con tag e copertina (scegli 320/256/192 kbps)
+
+3. Clicca "Sfoglia..." e scegli la cartella dove salvare i brani.
+
+4. Clicca "Scarica tutto". La barra mostra l'avanzamento e la
+   sezione "Cronologia" tiene traccia di cio' che hai gia' scaricato
+   (ti avvisa se stai per riscaricare lo stesso link).
+
+
+---------------------------------------------------------------------
+SCORCIATOIA: AVVIO CON DOPPIO CLIC (facoltativo)
+---------------------------------------------------------------------
+
+Per non scrivere comandi ogni volta, crea un file di testo nella
+cartella del progetto, incolla dentro queste due righe:
+
+      @echo off
+      .venv\Scripts\python app.py
+
+e salvalo con nome  "Avvia DJ Downloader.bat"  (estensione .bat,
+non .txt). Poi ti basta fare doppio clic su quel file per aprire
+l'app. (Devi comunque aver fatto una volta il PASSO 4 punto 3.)
+
+
+---------------------------------------------------------------------
+PROBLEMI FREQUENTI
+---------------------------------------------------------------------
+
+* "python non e' riconosciuto..."  -> non hai messo la spunta
+  "Add to PATH" al PASSO 1. Reinstalla Python ricordandoti la spunta.
+
+* "ffmpeg non e' riconosciuto" o l'app dice "ffmpeg mancante"
+  -> rifai il PASSO 2 e ricordati di CHIUDERE E RIAPRIRE il Prompt.
+
+* Un download Spotify e' lento: e' normale, Spotify viene scaricato
+  cercando l'audio corrispondente su YouTube, ci vuole qualche
+  secondo in piu' per brano.
+
+* Un brano di una playlist fallisce: l'app va avanti con gli altri
+  e segna quello fallito con la X rossa nella coda.
+
+=====================================================================
